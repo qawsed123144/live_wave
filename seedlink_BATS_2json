@@ -1,0 +1,48 @@
+[
+  {
+    "server": "140.109.81.42:18000",
+    "name": "iesanta",
+    "streams": [
+      {
+        "network": "TW",
+        "station": "DYSB",
+        "selector": "?HZ"
+      },
+      {
+        "network": "TW",
+        "station": "FUSB",
+        "selector": "?HZ"
+      },
+      {
+        "network": "TW",
+        "station": "GWUB",
+        "selector": "?HZ"
+      },
+      {
+        "network": "TW",
+        "station": "HGSD",
+        "selector": "?HZ"
+      },
+      {
+        "network": "TW",
+        "station": "HWLB",
+        "selector": "?HZ"
+      },
+      {
+        "network": "TW",
+        "station": "KMNB",
+        "selector": "?HZ"
+      },
+      {
+        "network": "TW",
+        "station": "LATB",
+        "selector": "?HZ"
+      },
+      {
+        "network": "TW",
+        "station": "LXI1",
+        "selector": "?HZ"
+      }
+    ]
+  }
+]

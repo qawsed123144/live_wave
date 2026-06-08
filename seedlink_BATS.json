@@ -1,0 +1,248 @@
+[
+  {
+    "server": "140.109.81.42:18000",
+    "name": "iesanta",
+    "streams": [
+      {
+        "network": "TW",
+        "station": "DYSB",
+        "selector": "BHZ",
+        "constant": 0.0000000004961991
+      },
+      {
+        "network": "TW",
+        "station": "FUSB",
+        "selector": "BHZ",
+        "constant": 0.0000000004958276
+      },
+      {
+        "network": "TW",
+        "station": "GWUB",
+        "selector": "BHZ",
+        "constant": 0.000000001985699
+      },
+      {
+        "network": "TW",
+        "station": "HGSD",
+        "selector": "BHZ",
+        "constant": 0.000000002094622
+      },
+      {
+        "network": "TW",
+        "station": "HWLB",
+        "selector": "BHZ",
+        "constant": 0.0000002384188
+      },
+      {
+        "network": "TW",
+        "station": "KMNB",
+        "selector": "BHZ",
+        "constant": 0.0000000004956801
+      },
+      {
+        "network": "TW",
+        "station": "LATB",
+        "selector": "BHZ",
+        "constant": 0.0000000004963543
+      },
+      {
+        "network": "TW",
+        "station": "LXI1",
+        "selector": "BHZ",
+        "constant": 0.0000000004962927
+      },
+      {
+        "network": "TW",
+        "station": "LYUB",
+        "selector": "BHZ",
+        "constant": 0.0000000004956801
+      },
+      {
+        "network": "TW",
+        "station": "MASB",
+        "selector": "BHZ",
+        "constant": 0.0000000002504427
+      },
+      {
+        "network": "TW",
+        "station": "MATB",
+        "selector": "BHZ",
+        "constant": 0.0000000004962976
+      },
+      {
+        "network": "TW",
+        "station": "NACB",
+        "selector": "BHZ",
+        "constant": 0.0000000002980964
+      },
+      {
+        "network": "TW",
+        "station": "NNSB",
+        "selector": "BHZ",
+        "constant": 0.000000000497998
+      },
+      {
+        "network": "TW",
+        "station": "PHUB",
+        "selector": "BHZ",
+        "constant": 0.0000000004956801
+      },
+      {
+        "network": "TW",
+        "station": "RLNB",
+        "selector": "BHZ",
+        "constant": 0.000000002094622
+      },
+      {
+        "network": "TW",
+        "station": "SBCB",
+        "selector": "BHZ",
+        "constant": 0.000000000497998
+      },
+      {
+        "network": "TW",
+        "station": "SSLB",
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "SXI1",
+        "selector": "BHZ",
+        "constant": 0.0000000004958276
+      },
+      {
+        "network": "TW",
+        "station": "SYNB",
+        "selector": "BHZ",
+        "constant": 0.000000001985699
+      },
+      {
+        "network": "TW",
+        "station": "TDCB",
+        "selector": "BHZ",
+        "constant": 0.0000000002333074
+      },
+      {
+        "network": "TW",
+        "station": "TPUB",
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "TUIB",
+        "selector": "BHZ",
+        "constant": 0.0000000019925
+      },
+      {
+        "network": "TW",
+        "station": "TWGB",
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "TWKB",
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "VCHM",
+        "selector": "HHZ",
+        "constant": 0.000000002079002
+      },
+      {
+        "network": "TW",
+        "station": "VDOS",
+        "selector": "HHZ",
+        "constant": 0.000000001982691
+      },
+      {
+        "network": "TW",
+        "station": "VNAS",
+        "selector": "HHZ",
+        "constant": 0.000000002079002
+      },
+      {
+        "network": "TW",
+        "station": "VWDT",
+        "selector": "HHZ",
+        "constant": 0.000000002081599
+      },
+      {
+        "network": "TW",
+        "station": "VWUC",
+        "selector": "HHZ",
+        "constant": 0.00000000197921
+      },
+      {
+        "network": "TW",
+        "station": "WARB",
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "WFSB",
+        "selector": "BHZ",
+        "constant": 0.000000001985171
+      },
+      {
+        "network": "TW",
+        "station": "WUSB",
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "YD07",
+        "selector": "HHZ",
+        "constant": 0.00000000197921
+      },
+      {
+        "network": "TW",
+        "station": "YHNB",
+        "selector": "BHZ",
+        "constant": 0.0000000003973647
+      },
+      {
+        "network": "TW",
+        "station": "YULB",
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "PH05",
+        "selector": "BHZ",
+        "constant": 0.000000001983222
+      },
+      {
+        "network": "FJ",
+        "station": "PTMZ",
+        "selector": "HHZ",
+        "constant": 0.000000001216421
+      }
+    ]
+  },
+  {
+    "server": "140.109.80.190:18000",
+    "name": "iesant6",
+    "streams": [
+      {
+        "network": "TW",
+        "station": "HOPB",
+        "selector": "??",
+        "constant": 0.0
+      },
+      {
+        "network": "TW",
+        "station": "JIGB",
+        "selector": "??",
+        "constant": 0.0
+      }
+    ]
+  }
+]
