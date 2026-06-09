@@ -1,0 +1,26 @@
+[
+  {
+    "server": "140.109.81.42:18000",
+    "name": "iesanta",
+    "streams": [
+      {
+        "network": "TW",
+        "station": "DYSB",
+        "selector": "BHZ",
+        "constant": 0.0000000004961991
+      },
+      {
+        "network": "TW",
+        "station": "FUSB",
+        "selector": "BHZ",
+        "constant": 0.0000000004958276
+      },
+      {
+        "network": "TW",
+        "station": "GWUB",
+        "selector": "BHZ",
+        "constant": 0.000000001985699
+      }
+    ]
+  }
+]

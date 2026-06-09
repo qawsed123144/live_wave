@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
 import Plotly from "plotly.js-dist-min";
 
 type TraceMessage = {
@@ -34,7 +33,7 @@ type WaveSamples = {
 
 const windowMs = 90000;
 const channelTimeOutMs = 90000;
-const dataTimeoutMs = channelTimeOutMs + 30000;
+const dataTimeoutMs = 180000;
 const backendUrl = "http://127.0.0.1:8000";
 const websocketUrl = "ws://127.0.0.1:8000/live-wave";
 const selectedSource = "iesanta";
@@ -96,10 +95,8 @@ export default function WavePlot() {
 
         let hoveredIndex: number | null = null;
         let uiRevision: string | number = "live";
-        let ignoreRelayoutEvent = false;
 
         function updateUserRange(event: Record<string, unknown>) {
-            if (ignoreRelayoutEvent) return;
             if (event["xaxis.autorange"] === true) {
                 userRangeMs = null;
                 return;
@@ -116,10 +113,7 @@ export default function WavePlot() {
         }
 
         function renderPlot() {
-            ignoreRelayoutEvent = true;
-            void Plotly.react(plotContainer, displayData(), buildLayout()).finally(() => {
-                setTimeout(() => { ignoreRelayoutEvent = false; }, 0);
-            });
+            void Plotly.react(plotContainer, displayData(), buildLayout());
         }
 
         renderPlotRef.current = renderPlot;
@@ -180,7 +174,6 @@ export default function WavePlot() {
         }
 
         function buildLayout() {
-            const [displayLeftMs, displayRightMs] = userRangeMs ?? [windowLeftMs, windowRightMs];
             const visibleWaveKeys = displayWaveKeys();
             const allWaveCount = waveKeys.length;
 
@@ -196,8 +189,8 @@ export default function WavePlot() {
                 font: { color: plotFontColor },
                 xaxis: {
                     type: "date" as const,
-                    ...(displayLeftMs > 0
-                        ? { autorange: false, range: [displayLeftMs, displayRightMs] }
+                    ...(userRangeMs !== null
+                        ? { autorange: false, range: [userRangeMs[0], userRangeMs[1]] }
                         : { autorange: true }),
                     gridcolor: gridColor,
                     tickfont: { color: plotFontColor },
@@ -261,6 +254,8 @@ export default function WavePlot() {
                 responsive: true,
                 modeBarButtonsToRemove: [
                     "pan2d",
+                    "zoomin2d",
+                    "zoomout2d"
                 ]
             })
 
