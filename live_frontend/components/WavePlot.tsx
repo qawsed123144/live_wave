@@ -39,8 +39,9 @@ const websocketUrl = "ws://127.0.0.1:8000/live-wave";
 const selectedSource = "iesanta";
 const priorityChannel = "BHZ";
 const secondaryChannel = "HHZ";
-const traceSpacing = 2;
 const traceScale = 200000;
+const traceSpacing = 2;
+const traceHeight = 30;
 
 const waveColors = [
     "#89b4fa",
@@ -62,10 +63,28 @@ export default function WavePlot() {
     const plotRef = useRef<HTMLDivElement>(null);
     const renderPlotRef = useRef<() => void>(() => undefined);
     const stationControlsRef = useRef<StationControl[]>([]);
+    const wsRef = useRef<WebSocket | null>(null);
 
     const [status, setStatus] = useState("connecting");
     const [rightEdgeLabel, setRightEdgeLabel] = useState("--");
     const [stationControls, setStationControls] = useState<StationControl[]>([]);
+
+    function sendSubscription(controls = stationControlsRef.current) {
+        if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+
+        wsRef.current.send(
+            JSON.stringify({
+                type: "subscribe",
+                stations: controls
+                    .filter((station) => station.visible && !station.timedOut)
+                    .map((station) => ({
+                        source: station.source,
+                        network: station.network,
+                        station: station.station,
+                    })),
+            })
+        );
+    }
 
     function toggleStationVisibility(network: string, station: string) {
         const nextControls = stationControlsRef.current.map((control) =>
@@ -76,6 +95,7 @@ export default function WavePlot() {
 
         stationControlsRef.current = nextControls;
         setStationControls(nextControls);
+        sendSubscription(nextControls);
         renderPlotRef.current();
     }
 
@@ -183,7 +203,7 @@ export default function WavePlot() {
                     font: { color: plotFontColor },
                 },
                 width: window.innerWidth - 40,
-                height: 900,
+                height: traceHeight * allWaveCount,
                 paper_bgcolor: paperBackgroundColor,
                 plot_bgcolor: plotBackgroundColor,
                 font: { color: plotFontColor },
@@ -283,17 +303,10 @@ export default function WavePlot() {
 
 
             ws = new WebSocket(websocketUrl);
+            wsRef.current = ws;
             ws.onopen = () => {
                 setStatus("connected");
-                ws?.send(
-                    JSON.stringify({
-                        type: "subscribe",
-                        stations: selectedStations.map((station) => ({
-                            network: station.network,
-                            station: station.station,
-                        })),
-                    })
-                );
+                sendSubscription(initialControls);
             };
             ws.onmessage = (event) => {
                 const trace: TraceMessage = JSON.parse(event.data);
@@ -393,6 +406,7 @@ export default function WavePlot() {
                 if (!changed) return;
                 stationControlsRef.current = nextControls;
                 setStationControls(nextControls);
+                sendSubscription(nextControls);
                 renderPlot();
             }, dataTimeoutMs);
         }
@@ -404,6 +418,7 @@ export default function WavePlot() {
         return () => {
             stopped = true;
             renderPlotRef.current = () => undefined;
+            wsRef.current = null;
             ws?.close();
             if (Plotly) {
                 Plotly.purge(plotContainer);

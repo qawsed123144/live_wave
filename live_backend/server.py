@@ -1,25 +1,26 @@
 import asyncio
 import json
 import threading
-import time
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-
 from pythonjsonlogger import jsonlogger
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from obspy.clients.seedlink.easyseedlink import EasySeedLinkClient
 
-
 RETRY_TIME = 2
 ATTEMPT_MAX = 10
 
 SOURCES_PATH = Path(__file__).resolve().parents[1] / "seedlink_BATS.json"
+
+
 def load_sources():
     with SOURCES_PATH.open(encoding="utf-8") as file:
         return json.load(file)
+
+
 SOURCES = load_sources()
 # ────────────────────────────────────
 # Log
@@ -37,15 +38,19 @@ for noisy_logger in ("obspy.clients.seedlink", " obspy.clients.seedlink"):
 
 
 class MyClient(EasySeedLinkClient):
-    def __init__(self, server, source_name, loop, queue):
+    def __init__(self, server, source_name, loop, queue, stop_event=None):
         super().__init__(server)
         self._server = server
         self._source_name = source_name
         self._loop = loop
         self._queue = queue
+        self._stop_event = stop_event
         self._first_trace_logged = False
 
     def on_data(self, trace):
+        if self._stop_event is not None and self._stop_event.is_set():
+            return
+
         trace.stats.source = self._source_name
         trace.stats.source_server = self._server
 
@@ -67,15 +72,41 @@ class MyClient(EasySeedLinkClient):
         self._loop.call_soon_threadsafe(self._queue.put_nowait, trace)
 
 
-def run_seedlink(source_name, server, streams, loop, queue):
+def stop_seedlink_client(client):
+    if client is None:
+        return
+
+    try:
+        client.close()
+        return
+    except Exception:
+        pass
+
+    try:
+        client.conn.terminate()
+    except Exception:
+        pass
+
+
+def run_seedlink(source_name, server, streams, loop, queue, state):
+    stop_event = state["stop_event"]
     attempt = 0
-    while attempt < ATTEMPT_MAX:
+    while attempt < ATTEMPT_MAX and not stop_event.is_set():
         attempt += 1
         logger.info("connecting", extra={
                     "attempt": attempt, "source": source_name, "server": server})
         try:
-            client = MyClient(server, source_name, loop, queue)
+            client = MyClient(server, source_name, loop, queue, stop_event)
+            state["client"] = client
+
+            if stop_event.is_set():
+                stop_seedlink_client(client)
+                break
+
             for stream in streams:
+                if stop_event.is_set():
+                    break
+
                 logger.info(
                     "selecting stream",
                     extra={
@@ -88,6 +119,11 @@ def run_seedlink(source_name, server, streams, loop, queue):
                 )
                 client.select_stream(
                     stream["network"], stream["station"], stream["selector"])
+
+            if stop_event.is_set():
+                stop_seedlink_client(client)
+                break
+
             logger.info(
                 "seedlink client running",
                 extra={
@@ -98,19 +134,26 @@ def run_seedlink(source_name, server, streams, loop, queue):
             )
             client.run()
         except Exception as e:
+            if stop_event.is_set():
+                break
             logger.warning("connection lost", extra={
                            "attempt": attempt, "source": source_name, "server": server, "error": str(e)})
-        time.sleep(RETRY_TIME)
+        if stop_event.wait(RETRY_TIME):
+            break
+
+    state["client"] = None
+    logger.info("seedlink client stopped", extra={
+                "source": source_name, "server": server})
 
 
 # ────────────────────────────────────
 # Run Websocket Broadcast
 @dataclass
 class Subscription:
-    stations: set[tuple[str, str]] = field(default_factory=set)
+    stations: set[tuple[str, str, str]] = field(default_factory=set)
 
     def matches(self, trace) -> bool:
-        key = (trace.stats.network, trace.stats.station)
+        key = (trace.stats.source, trace.stats.network, trace.stats.station)
         return key in self.stations
 
 
@@ -133,11 +176,17 @@ class SubscriptionManager:
             "subscription updated",
             extra={
                 "stations": [
-                    {"network": network, "station": station}
-                    for network, station in sorted(subscription.stations)
+                    {"source": source, "network": network, "station": station}
+                    for source, network, station in sorted(subscription.stations)
                 ]
             },
         )
+
+    def active_stations(self) -> set[tuple[str, str, str]]:
+        stations: set[tuple[str, str, str]] = set()
+        for subscription in self._clients.values():
+            stations.update(subscription.stations)
+        return stations
 
     async def broadcast_trace(self, trace):
         targets = [
@@ -162,37 +211,131 @@ class SubscriptionManager:
             "data":          trace.data.tolist(),
         })
         
-        for websocket in targets:
+        async def send_one(websocket: WebSocket):
             try:
                 await websocket.send_text(payload)
+                return None
             except Exception:
-                dead.append(websocket)
+                return websocket
+
+        dead = [
+            websocket
+            for websocket in await asyncio.gather(*(send_one(websocket) for websocket in targets))
+            if websocket is not None
+        ]
 
         for websocket in dead:
             self.disconnect(websocket)
 
+        return bool(dead)
 
-async def run_broadcast(queue, manager: SubscriptionManager):
+
+class SeedLinkManager:
+    def __init__(self, sources, loop, queue):
+        self._sources = sources
+        self._loop = loop
+        self._queue = queue
+        self._workers = {}
+
+    def update_active_stations(self, active_stations):
+        active_stations = set(active_stations)
+        logger.info(
+            "seedlink active stations updated",
+            extra={
+                "stations": [
+                    {
+                        "source": source,
+                        "network": network,
+                        "station": station,
+                    }
+                    for source, network, station in sorted(active_stations)
+                ]
+            },
+        )
+
+        for source in self._sources:
+            source_name = source["name"]
+            streams = [
+                stream
+                for stream in source["streams"]
+                if (source_name, stream["network"], stream["station"]) in active_stations
+            ]
+            stream_keys = frozenset(
+                (stream["network"], stream["station"], stream["selector"])
+                for stream in streams
+            )
+            state = self._workers.get(source_name)
+
+            if state and state["stream_keys"] == stream_keys:
+                continue
+
+            if state:
+                self._stop_worker(state)
+                self._workers.pop(source_name, None)
+
+            if not streams:
+                continue
+
+            stop_event = threading.Event()
+            state = {
+                "stream_keys": stream_keys,
+                "stop_event": stop_event,
+                "client": None,
+            }
+            thread = threading.Thread(
+                target=run_seedlink,
+                args=(
+                    source_name,
+                    source["server"],
+                        streams,
+                        self._loop,
+                        self._queue,
+                        state,
+                    ),
+                daemon=True,
+            )
+            state["thread"] = thread
+            self._workers[source_name] = state
+            thread.start()
+
+    def _stop_worker(self, state):
+        state["stop_event"].set()
+        stop_seedlink_client(state["client"])
+
+    def stop_all(self):
+        states = list(self._workers.values())
+        self._workers.clear()
+        for state in states:
+            self._stop_worker(state)
+
+
+async def run_broadcast(queue, manager, seedlink_manager):
     while True:
         trace = await queue.get()
-        await manager.broadcast_trace(trace)
+        changed = await manager.broadcast_trace(trace)
+        if changed:
+            seedlink_manager.update_active_stations(manager.active_stations())
+
 # ────────────────────────────────────
 # Lifespan
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     queue = asyncio.Queue()
     manager = SubscriptionManager()
-    app.state.queue = queue
-    app.state.manager = manager
     loop = asyncio.get_running_loop()
-    for source in SOURCES:
-        thread = threading.Thread(
-            target=run_seedlink, args=(source["name"], source["server"], source["streams"], loop, queue), daemon=True)
-        thread.start()
-    task = asyncio.create_task(run_broadcast(queue, manager))
+    seedlink_manager = SeedLinkManager(
+        sources=SOURCES,
+        loop=loop,
+        queue=queue,
+    )
+
+    app.state.manager = manager
+    app.state.seedlink_manager = seedlink_manager
+
+    task = asyncio.create_task(run_broadcast(queue, manager, seedlink_manager))
     yield  # before:run; after:shutdown
+    seedlink_manager.stop_all()
     task.cancel()
 # ────────────────────────────────────
 # FastAPI endpoint
@@ -207,13 +350,14 @@ def parse_subscription(message: str) -> Subscription:
     stations = set()
 
     for item in data.get("stations", []):
+        source = item.get("source")
         network = item.get("network")
         station = item.get("station")
 
-        if not network or not station:
+        if not source or not network or not station:
             continue
 
-        stations.add((network, station))
+        stations.add((source, network, station))
 
     return Subscription(stations=stations)
 
@@ -245,6 +389,8 @@ async def stations():
 @app.websocket("/live-wave")
 async def endpoint(websocket: WebSocket):
     manager: SubscriptionManager = websocket.app.state.manager
+    seedlink_manager: SeedLinkManager = websocket.app.state.seedlink_manager
+    
     await manager.connect(websocket)
     try:
         while True:
@@ -258,6 +404,12 @@ async def endpoint(websocket: WebSocket):
                 continue
 
             manager.update_subscription(websocket, subscription)
+            seedlink_manager.update_active_stations(
+                manager.active_stations()
+            )
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+        seedlink_manager.update_active_stations(
+            manager.active_stations()
+        )
