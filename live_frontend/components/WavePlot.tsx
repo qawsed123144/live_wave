@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Plotly from "plotly.js-dist-min";
 
+type WavePlotProps = {
+    stations: Station[];
+}
+
 type TraceMessage = {
     source: string;
     network: string;
@@ -13,16 +17,16 @@ type TraceMessage = {
     data: number[];
 };
 
-type StationInfo = {
+type Station = {
     source: string;
     network: string;
     station: string;
+    selector: string;
     constant: number;
 };
 
-type StationControl = StationInfo & {
+type StationControl = Station & {
     visible: boolean;
-    channel: string;
     timedOut: boolean;
 };
 
@@ -32,13 +36,10 @@ type WaveSamples = {
 };
 
 const windowMs = 90000;
-const channelTimeOutMs = 90000;
 const dataTimeoutMs = 180000;
 const backendUrl = "http://127.0.0.1:8000";
 const websocketUrl = "ws://127.0.0.1:8000/live-wave";
-const selectedSource = "iesanta";
-const priorityChannel = "BHZ";
-const secondaryChannel = "HHZ";
+const sources = ["iesanta", "iesant6"];
 const traceScale = 200000;
 const traceSpacing = 2;
 const traceHeight = 30;
@@ -59,17 +60,25 @@ const plotBackgroundColor = "#1e1e2e";
 const gridColor = 'rgba(49, 50, 68, 0.3)';
 const gridColorHover = 'rgba(49, 50, 68, 1)';
 
-export default function WavePlot() {
+export default function WavePlot({ stations }: WavePlotProps) {
+    const [status, setStatus] = useState("idle");
+    const [rightEdgeLabel, setRightEdgeLabel] = useState("--");
+    const [stationControls, setStationControls] = useState<StationControl[]>([]);
+
     const plotRef = useRef<HTMLDivElement>(null);
     const renderPlotRef = useRef<() => void>(() => undefined);
     const stationControlsRef = useRef<StationControl[]>([]);
     const wsRef = useRef<WebSocket | null>(null);
 
-    const [status, setStatus] = useState("connecting");
-    const [rightEdgeLabel, setRightEdgeLabel] = useState("--");
-    const [stationControls, setStationControls] = useState<StationControl[]>([]);
+    function submit() {
 
-    function sendSubscription(controls = stationControlsRef.current) {
+        setStatus("starting");
+        setStationControls([]);
+        stationControlsRef.current = [];
+        setRightEdgeLabel("--");
+    }
+
+    function sendSubscription(controls: StationControl[]) {
         if (wsRef.current?.readyState !== WebSocket.OPEN) return;
 
         wsRef.current.send(
@@ -86,20 +95,22 @@ export default function WavePlot() {
         );
     }
 
-    function toggleStationVisibility(network: string, station: string) {
+    function toggleStationVisibility(network: string, station: string, selector: string) {
         const nextControls = stationControlsRef.current.map((control) =>
-            control.network === network && control.station === station
+            control.network === network && control.station === station && control.selector === selector
                 ? { ...control, visible: control.timedOut ? control.visible : !control.visible }
                 : control
         );
 
         stationControlsRef.current = nextControls;
         setStationControls(nextControls);
-        sendSubscription(nextControls);
         renderPlotRef.current();
     }
 
+
     useEffect(() => {
+        if (stations.length === 0) return;
+
         let ws: WebSocket | null = null;
         let stopped = false;
 
@@ -142,13 +153,13 @@ export default function WavePlot() {
             const visibleStations = new Set(
                 stationControlsRef.current
                     .filter((station) => station.visible)
-                    .map((station) => `${station.network}.${station.station}`)
+                    .map((station) => `${station.network}.${station.station}.${station.selector}`)
             );
 
-            return waveKeys.filter((key) => visibleStations.has(key.split(".").slice(0, 2).join(".")));
+            return waveKeys.filter((key) => visibleStations.has(key));
         }
 
-        function displayWave(key: string, index: number) {
+        function displayWave(key: string) {
             const x: number[] = [];
             const y: number[] = [];
             const samples = waves[key];
@@ -172,9 +183,9 @@ export default function WavePlot() {
             const waveKeys = displayWaveKeys();
 
             return waveKeys.map((key, index) => {
-                const { x, y } = displayWave(key, index);
+                const { x, y } = displayWave(key);
                 const stationIndex = stationControlsRef.current.findIndex((station) =>
-                    key.startsWith(`${station.network}.${station.station}.`)
+                    key === `${station.network}.${station.station}.${station.selector}`
                 );
 
                 return {
@@ -203,7 +214,7 @@ export default function WavePlot() {
                     font: { color: plotFontColor },
                 },
                 width: window.innerWidth - 40,
-                height: traceHeight * allWaveCount,
+                height: Math.max(traceHeight * allWaveCount + 100, 500),
                 paper_bgcolor: paperBackgroundColor,
                 plot_bgcolor: plotBackgroundColor,
                 font: { color: plotFontColor },
@@ -217,7 +228,7 @@ export default function WavePlot() {
                 },
                 yaxis: {
                     autorange: false,
-                    range: [0, allWaveCount * traceSpacing],
+                    range: [-traceSpacing, allWaveCount * traceSpacing],
                     tickvals: visibleWaveKeys.map((key) => (waveKeys.length - waveKeys.indexOf(key) - 1) * traceSpacing),
                     ticktext: visibleWaveKeys.map(k => k),
                     showgrid: false,
@@ -245,28 +256,19 @@ export default function WavePlot() {
         async function start() {
             setStatus("loading stations");
 
-            const response = await fetch(`${backendUrl}/stations`);
-            const stations: StationInfo[] = await response.json();
-            if (stopped) return;
-
-            const selectedStations = stations.filter(
-                (station) => station.source === selectedSource
-            );
-
-            const initialControls = selectedStations.map((station) => ({
+            const initialControls = stations.map((station) => ({
                 ...station,
                 visible: true,
-                channel: priorityChannel,
                 timedOut: false,
             }));
             stationControlsRef.current = initialControls;
             setStationControls(initialControls);
 
-            waveKeys = selectedStations.map(
-                (station) => `${station.network}.${station.station}.${priorityChannel}`
+            waveKeys = stations.map(
+                (station) => `${station.network}.${station.station}.${station.selector}`
             );
-            for (const station of selectedStations) {
-                const key = `${station.network}.${station.station}.${priorityChannel}`;
+            for (const station of stations) {
+                const key = `${station.network}.${station.station}.${station.selector}`;
                 waves[key] = { times: [], values: [] };
             }
 
@@ -310,8 +312,6 @@ export default function WavePlot() {
             };
             ws.onmessage = (event) => {
                 const trace: TraceMessage = JSON.parse(event.data);
-                if (trace.source !== selectedSource) return;
-                if (trace.channel !== priorityChannel && trace.channel !== secondaryChannel) return;
 
                 const key = `${trace.network}.${trace.station}.${trace.channel}`;
                 if (!waveKeys.includes(key)) return;
@@ -362,45 +362,17 @@ export default function WavePlot() {
                 setStatus(`closed`);
             };
 
-            // check if need to switch to secondary channel 
-            setTimeout(() => {
-                if (stopped) return;
-                let switchedChannel = false;
-
-                for (let i = 0; i < waveKeys.length; i += 1) {
-                    const primaryKey = waveKeys[i];
-                    if (!primaryKey.endsWith(`.${priorityChannel}`) || waves[primaryKey]?.times.length) continue;
-
-                    const secondaryKey = primaryKey.slice(0, -priorityChannel.length) + secondaryChannel;
-                    waveKeys[i] = secondaryKey;
-                    waves[secondaryKey] = { times: [], values: [] };
-                    switchedChannel = true;
-                }
-
-                if (switchedChannel) {
-                    const nextControls = stationControlsRef.current.map((station) => {
-                        const primaryKey = `${station.network}.${station.station}.${priorityChannel}`;
-                        return waves[primaryKey]?.times.length ? station : { ...station, channel: secondaryChannel };
-                    });
-                    stationControlsRef.current = nextControls;
-                    setStationControls(nextControls);
-                }
-                renderPlot();
-            }, channelTimeOutMs);
-
             // check if need to mark stations as no data
             setTimeout(() => {
                 if (stopped) return;
                 let changed = false;
 
                 const nextControls = stationControlsRef.current.map((station) => {
-                    const key = waveKeys.find((waveKey) =>
-                        waveKey.startsWith(`${station.network}.${station.station}.`)
-                    );
-                    if (station.timedOut || waves[key ?? ""]?.times.length) return station;
+                    const key = `${station.network}.${station.station}.${station.selector}`;
+                    if (station.timedOut || waves[key]?.times.length) return station;
 
                     changed = true;
-                    return { ...station, visible: false, timedOut: true };
+                    return { ...station, visible: true, timedOut: true };
                 });
 
                 if (!changed) return;
@@ -424,22 +396,22 @@ export default function WavePlot() {
                 Plotly.purge(plotContainer);
             }
         };
-    }, [])
+    }, [stations])
+
     return (
         <div>
             <div className="mb-3 text-sm text-zinc-600">
                 <div>WebSocket: {status}</div>
-                <div>Source: {selectedSource}</div>
                 <div>Stations: {stationControls.filter((station) => station.visible).length} / {stationControls.length}</div>
                 <div>Right edge: {rightEdgeLabel}</div>
             </div>
             <div className="mb-4 grid gap-2 text-sm sm:grid-cols-10 lg:grid-cols-11 xl:grid-cols-12">
                 {stationControls.map((station) => (
                     <button
-                        key={`${station.network}.${station.station}`}
+                        key={`${station.network}.${station.station}.${station.selector}`}
                         type="button"
                         disabled={station.timedOut}
-                        onClick={() => toggleStationVisibility(station.network, station.station)}
+                        onClick={() => toggleStationVisibility(station.network, station.station, station.selector)}
                         className={`rounded border p-3 text-left shadow-sm transition ${station.timedOut
                             ? "cursor-not-allowed border-zinc-700 bg-zinc-600 text-zinc-300"
                             : station.visible
@@ -449,7 +421,7 @@ export default function WavePlot() {
                     >
                         <div className="flex items-center justify-between gap-2">
                             <div className="min-w-0 font-mono font-semibold">
-                                {station.network}.{station.station}.{station.channel}
+                                {station.network}.{station.station}.{station.selector}
                             </div>
                         </div>
                     </button>

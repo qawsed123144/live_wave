@@ -1,0 +1,326 @@
+[
+  {
+    "server": "140.109.81.42:18000",
+    "name": "iesanta",
+    "streams": [
+      {
+        "network": "TW",
+        "station": "DYSB",
+        "lon": 121.4049,
+        "lat": 24.8208,
+        "selector": "BHZ",
+        "constant": 0.0000000004961991
+      },
+      {
+        "network": "TW",
+        "station": "FUSB",
+        "lon": 121.5875,
+        "lat": 24.7597,
+        "selector": "BHZ",
+        "constant": 0.0000000004958276
+      },
+      {
+        "network": "TW",
+        "station": "GWUB",
+        "lon": 121.1131,
+        "lat": 24.5059,
+        "selector": "BHZ",
+        "constant": 0.000000001985699
+      },
+      {
+        "network": "TW",
+        "station": "HGSD",
+        "lon": 121.4239,
+        "lat": 23.4921,
+        "selector": "BHZ",
+        "constant": 0.000000002094622
+      },
+      {
+        "network": "TW",
+        "station": "HWLB",
+        "lon": 121.613838,
+        "lat": 23.974713,
+        "selector": "BHZ",
+        "constant": 0.0000002384188
+      },
+      {
+        "network": "TW",
+        "station": "KMNB",
+        "lon": 118.3882,
+        "lat": 24.4638,
+        "selector": "BHZ",
+        "constant": 0.0000000004956801
+      },
+      {
+        "network": "TW",
+        "station": "LATB",
+        "lon": 121.5264,
+        "lat": 24.5353,
+        "selector": "BHZ",
+        "constant": 0.0000000004963543
+      },
+      {
+        "network": "TW",
+        "station": "LXI1",
+        "lon": 121.4245,
+        "lat": 24.0092,
+        "selector": "BHZ",
+        "constant": 0.0000000004962927
+      },
+      {
+        "network": "TW",
+        "station": "LYUB",
+        "lon": 121.5121,
+        "lat": 22.0485,
+        "selector": "BHZ",
+        "constant": 0.0000000004956801
+      },
+      {
+        "network": "TW",
+        "station": "MASB",
+        "lon": 120.6326,
+        "lat": 22.6109,
+        "selector": "BHZ",
+        "constant": 0.0000000002504427
+      },
+      {
+        "network": "TW",
+        "station": "MATB",
+        "lon": 119.929,
+        "lat": 26.1402,
+        "selector": "BHZ",
+        "constant": 0.0000000004962976
+      },
+      {
+        "network": "TW",
+        "station": "NACB",
+        "lon": 121.5947,
+        "lat": 24.1738,
+        "selector": "BHZ",
+        "constant": 0.0000000002980964
+      },
+      {
+        "network": "TW",
+        "station": "NNSB",
+        "lon": 121.3828,
+        "lat": 24.4284,
+        "selector": "BHZ",
+        "constant": 0.000000000497998
+      },
+      {
+        "network": "TW",
+        "station": "PHUB",
+        "lon": 119.5801,
+        "lat": 23.5114,
+        "selector": "BHZ",
+        "constant": 0.0000000004956801
+      },
+      {
+        "network": "TW",
+        "station": "RLNB",
+        "lon": 120.3594,
+        "lat": 23.8911,
+        "selector": "BHZ",
+        "constant": 0.000000002094622
+      },
+      {
+        "network": "TW",
+        "station": "SBCB",
+        "lon": 120.9854,
+        "lat": 24.7924,
+        "selector": "BHZ",
+        "constant": 0.000000000497998
+      },
+      {
+        "network": "TW",
+        "station": "SSLB",
+        "lon": 120.954,
+        "lat": 23.7876,
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "SXI1",
+        "lon": 121.8754,
+        "lat": 25.0942,
+        "selector": "BHZ",
+        "constant": 0.0000000004958276
+      },
+      {
+        "network": "TW",
+        "station": "SYNB",
+        "lon": 120.9862,
+        "lat": 23.2482,
+        "selector": "BHZ",
+        "constant": 0.000000001985699
+      },
+      {
+        "network": "TW",
+        "station": "TDCB",
+        "lon": 121.1583,
+        "lat": 24.2527,
+        "selector": "BHZ",
+        "constant": 0.0000000002333074
+      },
+      {
+        "network": "TW",
+        "station": "TPUB",
+        "lon": 120.6296,
+        "lat": 23.3005,
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "TUIB",
+        "lon": 121.941887,
+        "lat": 24.838455,
+        "selector": "BHZ",
+        "constant": 0.0000000019925
+      },
+      {
+        "network": "TW",
+        "station": "TWGB",
+        "lon": 121.0799,
+        "lat": 22.8177,
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "TWKB",
+        "lon": 120.8125,
+        "lat": 21.9409,
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "VCHM",
+        "lon": 119.4295,
+        "lat": 23.2087,
+        "selector": "HHZ",
+        "constant": 0.000000002079002
+      },
+      {
+        "network": "TW",
+        "station": "VDOS",
+        "lon": 116.7306,
+        "lat": 20.701,
+        "selector": "HHZ",
+        "constant": 0.000000001982691
+      },
+      {
+        "network": "TW",
+        "station": "VNAS",
+        "lon": 114.365,
+        "lat": 10.3774,
+        "selector": "HHZ",
+        "constant": 0.000000002079002
+      },
+      {
+        "network": "TW",
+        "station": "VWDT",
+        "lon": 121.1412,
+        "lat": 23.7537,
+        "selector": "HHZ",
+        "constant": 0.000000002081599
+      },
+      {
+        "network": "TW",
+        "station": "VWUC",
+        "lon": 119.4492,
+        "lat": 24.9911,
+        "selector": "HHZ",
+        "constant": 0.00000000197921
+      },
+      {
+        "network": "TW",
+        "station": "WARB",
+        "lon": 121.3862,
+        "lat": 23.7178,
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "WFSB",
+        "lon": 121.7816,
+        "lat": 25.0715,
+        "selector": "BHZ",
+        "constant": 0.000000001985171
+      },
+      {
+        "network": "TW",
+        "station": "WUSB",
+        "lon": 121.1175,
+        "lat": 23.9919,
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "YD07",
+        "lon": 121.62,
+        "lat": 25.1756,
+        "selector": "HHZ",
+        "constant": 0.00000000197921
+      },
+      {
+        "network": "TW",
+        "station": "YHNB",
+        "lon": 121.3757,
+        "lat": 24.6695,
+        "selector": "BHZ",
+        "constant": 0.0000000003973647
+      },
+      {
+        "network": "TW",
+        "station": "YULB",
+        "lon": 121.2971,
+        "lat": 23.3925,
+        "selector": "BHZ",
+        "constant": 0.0000000005013084
+      },
+      {
+        "network": "TW",
+        "station": "PH05",
+        "lon": 119.653583,
+        "lat": 23.576197,
+        "selector": "BHZ",
+        "constant": 0.000000001983222
+      },
+      {
+        "network": "FJ",
+        "station": "PTMZ",
+        "lon": 119.119,
+        "lat": 25.0411,
+        "selector": "HHZ",
+        "constant": 0.000000001216421
+      }
+    ]
+  },
+  {
+    "server": "140.109.80.190:18000",
+    "name": "iesant6",
+    "streams": [
+      {
+        "network": "TW",
+        "station": "HOPB",
+        "lon": 121.6929,
+        "lat": 24.3328,
+        "selector": "HHZ",
+        "constant": 0.000000002083333
+      },
+      {
+        "network": "TW",
+        "station": "JIGB",
+        "lon": 121.0049,
+        "lat": 23.9601,
+        "selector": "HHZ",
+        "constant": 0.000000001983222
+      }
+    ]
+  }
+]
