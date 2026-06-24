@@ -404,7 +404,7 @@ export default function StationMap({ setStations }: StationMapProps) {
             <div className="mb-2 flex items-center gap-3 text-sm">
                 <div>Selected: {selectedStations.size}</div>
                 <div className="text-zinc-500">
-                    Alt + drag = line select, Shift + drag = box select
+                    Alt - line select, Shift - box select
                 </div>
             </div>
             <div className="relative w-full h-[600px] overflow-hidden border border-neutral-700">
