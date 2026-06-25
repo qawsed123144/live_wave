@@ -149,6 +149,11 @@ export default function WavePlot({ stations }: WavePlotProps) {
 
         renderPlotRef.current = renderPlot;
 
+        const resizeObserver = new ResizeObserver(() => {
+            renderPlotRef.current();
+        });
+        resizeObserver.observe(plotContainer);
+
         function displayWaveKeys() {
             const visibleStations = new Set(
                 stationControlsRef.current
@@ -207,14 +212,15 @@ export default function WavePlot({ stations }: WavePlotProps) {
         function buildLayout() {
             const visibleWaveKeys = displayWaveKeys();
             const allWaveCount = waveKeys.length;
+            const plotWidth = plotContainer.clientWidth || window.innerWidth - 40;
 
             return {
                 title: {
                     text: "Live Waveforms Demo",
                     font: { color: plotFontColor },
                 },
-                width: window.innerWidth - 40,
-                height: Math.max(traceHeight * allWaveCount + 100, 500),
+                width: plotWidth,
+                height: Math.max(plotContainer.clientHeight, traceHeight * allWaveCount + 100, 360),
                 paper_bgcolor: paperBackgroundColor,
                 plot_bgcolor: plotBackgroundColor,
                 font: { color: plotFontColor },
@@ -389,6 +395,7 @@ export default function WavePlot({ stations }: WavePlotProps) {
 
         return () => {
             stopped = true;
+            resizeObserver.disconnect();
             renderPlotRef.current = () => undefined;
             wsRef.current = null;
             ws?.close();
@@ -399,35 +406,35 @@ export default function WavePlot({ stations }: WavePlotProps) {
     }, [stations])
 
     return (
-        <div>
-            <div className="mb-3 text-sm text-zinc-600">
-                <div>WebSocket: {status}</div>
-                <div>Stations: {stationControls.filter((station) => station.visible).length} / {stationControls.length}</div>
-                <div>Right edge: {rightEdgeLabel}</div>
+        <section className="flex h-full w-full flex-col overflow-auto rounded-b-lg border border-slate-600/90 bg-[#151b24] p-3 shadow-xl shadow-black/35">
+            <div className="mb-3 grid gap-2 text-xs text-slate-300 sm:grid-cols-3">
+                <div className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2">WebSocket: {status}</div>
+                <div className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2">Stations: {stationControls.filter((station) => station.visible).length} / {stationControls.length}</div>
+                <div className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2">Right edge: {rightEdgeLabel}</div>
             </div>
-            <div className="mb-4 grid gap-2 text-sm sm:grid-cols-10 lg:grid-cols-11 xl:grid-cols-12">
+            <div className="mb-4 grid gap-2 text-xs sm:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9">
                 {stationControls.map((station) => (
                     <button
                         key={`${station.network}.${station.station}.${station.selector}`}
                         type="button"
                         disabled={station.timedOut}
                         onClick={() => toggleStationVisibility(station.network, station.station, station.selector)}
-                        className={`rounded border p-3 text-left shadow-sm transition ${station.timedOut
-                            ? "cursor-not-allowed border-zinc-700 bg-zinc-600 text-zinc-300"
+                        className={`rounded-md border px-2 py-2 text-left shadow-sm transition ${station.timedOut
+                            ? "cursor-not-allowed border-slate-700 bg-slate-800 text-slate-500"
                             : station.visible
-                                ? "border-zinc-300 bg-white text-zinc-800"
-                                : "border-zinc-200 bg-zinc-100 text-zinc-500"
+                                ? "border-cyan-400/60 bg-cyan-400/10 text-cyan-100"
+                                : "border-slate-700 bg-slate-950/70 text-slate-500"
                             }`}
                     >
                         <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0 font-mono font-semibold">
+                            <div className="min-w-0 truncate font-mono font-semibold">
                                 {station.network}.{station.station}.{station.selector}
                             </div>
                         </div>
                     </button>
                 ))}
             </div>
-            <div ref={plotRef} />
-        </div>
+            <div className="min-h-[360px] flex-1 overflow-hidden rounded-md border border-slate-500/80 bg-[#13131f]" ref={plotRef} />
+        </section>
     )
 }

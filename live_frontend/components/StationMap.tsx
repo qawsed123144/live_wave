@@ -5,7 +5,11 @@ import maplibregl, { type Map as MapLibreMap, type MapMouseEvent, type PointLike
 
 import stationsJSON from "@/data/seedlink_BATS.json";
 
-const mapStyle = "https://tiles.openfreemap.org/styles/liberty";
+const mapStyleDefaultLight = "https://tiles.openfreemap.org/styles/liberty";
+const mapStyleDefaultDark = "https://tiles.openfreemap.org/styles/dark"
+const mapStyleDark = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+const mapStyleLight = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+
 const mapCenter: [number, number] = [121, 23.7];
 const mapZoom: number = 6.8;
 const mapBounds: [number, number, number, number] = [116, 20, 125, 27];
@@ -182,7 +186,6 @@ export default function StationMap({ setStations }: StationMapProps) {
 
         addStations(ids);
     }
-
     function submit() {
         setStations(Array.from(selectedStationsRef.current.values()));
     }
@@ -199,7 +202,7 @@ export default function StationMap({ setStations }: StationMapProps) {
 
         const map = new maplibregl.Map({
             container: containerRef.current,
-            style: mapStyle,
+            style: mapStyleLight,
             center: mapCenter,
             zoom: mapZoom,
             maxBounds: mapBounds
@@ -399,15 +402,29 @@ export default function StationMap({ setStations }: StationMapProps) {
         };
     }, [stationGeoJson])
 
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const resizeObserver = new ResizeObserver(() => {
+            mapRef.current?.resize();
+        });
+
+        resizeObserver.observe(containerRef.current);
+
+        return () => {
+            resizeObserver.disconnect();
+        };
+    }, []);
+
     return (
-        <div>
-            <div className="mb-2 flex items-center gap-3 text-sm">
-                <div>Selected: {selectedStations.size}</div>
-                <div className="text-zinc-500">
-                    Alt - line select, Shift - box select
+        <section className="flex h-full w-full flex-col overflow-auto rounded-b-lg border border-slate-600/90 bg-[#151b24] p-3 shadow-xl shadow-black/35">
+            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-300">
+                <div className="font-mono text-slate-100">Selected: {selectedStations.size}</div>
+                <div className="text-slate-400">
+                    Alt: line select / Shift: box select
                 </div>
             </div>
-            <div className="relative w-full h-[600px] overflow-hidden border border-neutral-700">
+            <div className="relative mx-auto aspect-square min-h-[220px] max-h-full w-full max-w-full flex-1 overflow-hidden rounded-full border border-slate-500/80 bg-slate-950">
                 <div className="w-full h-full" ref={containerRef} />
 
                 {dragSelection && (
@@ -436,31 +453,33 @@ export default function StationMap({ setStations }: StationMapProps) {
                     </svg>
                 )}
             </div>
-            <button
-                type="button"
-                // disabled={ }
-                className="rounded border border-zinc-300 bg-white p-3 text-left text-zinc-800 shadow-sm transition disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-600 disabled:text-zinc-300"
-                onClick={() => submit()}
-            >
-                <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 font-mono font-semibold">
-                        Submit
+            <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                    type="button"
+                    // disabled={ }
+                    className="rounded-md border border-cyan-400/60 bg-cyan-400/10 p-2.5 text-left text-cyan-100 shadow-sm transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800 disabled:text-slate-400"
+                    onClick={() => submit()}
+                >
+                    <div className="flex items-center justify-center gap-2">
+                        <div className="min-w-0 font-mono text-sm font-semibold">
+                            Submit
+                        </div>
                     </div>
-                </div>
-            </button>
-            <button
-                type="button"
-                // disabled={ }
-                className="rounded border border-zinc-300 bg-white p-3 text-left text-zinc-800 shadow-sm transition disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-600 disabled:text-zinc-300"
-                onClick={() => clear()}
-            >
-                <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 font-mono font-semibold">
-                        Clear
+                </button>
+                <button
+                    type="button"
+                    // disabled={ }
+                    className="rounded-md border border-slate-500 bg-slate-800/70 p-2.5 text-left text-slate-100 shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800 disabled:text-slate-400"
+                    onClick={() => clear()}
+                >
+                    <div className="flex items-center justify-center gap-2">
+                        <div className="min-w-0 font-mono text-sm font-semibold">
+                            Clear
+                        </div>
                     </div>
-                </div>
-            </button>
-        </div >
+                </button>
+            </div>
+        </section >
     )
 
         ;
