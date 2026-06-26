@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Plotly from "plotly.js-dist-min";
+import { draftMode } from "next/headers";
 
 type WavePlotProps = {
     stations: Station[];
@@ -37,9 +38,8 @@ type WaveSamples = {
 
 const windowMs = 90000;
 const dataTimeoutMs = 180000;
-const backendUrl = "http://127.0.0.1:8000";
+const retentionMs = 10 * 60 * 1000;
 const websocketUrl = "ws://127.0.0.1:8000/live-wave";
-const sources = ["iesanta", "iesant6"];
 const traceScale = 200000;
 const traceSpacing = 2;
 const traceHeight = 30;
@@ -69,14 +69,6 @@ export default function WavePlot({ stations }: WavePlotProps) {
     const renderPlotRef = useRef<() => void>(() => undefined);
     const stationControlsRef = useRef<StationControl[]>([]);
     const wsRef = useRef<WebSocket | null>(null);
-
-    function submit() {
-
-        setStatus("starting");
-        setStationControls([]);
-        stationControlsRef.current = [];
-        setRightEdgeLabel("--");
-    }
 
     function sendSubscription(controls: StationControl[]) {
         if (wsRef.current?.readyState !== WebSocket.OPEN) return;
@@ -255,7 +247,8 @@ export default function WavePlot({ stations }: WavePlotProps) {
                     line: {
                         color: i === hoveredIndex ? gridColorHover : gridColor,
                     }
-                }))
+                })),
+                draftMode: "pan"
             };
         }
 
@@ -281,7 +274,6 @@ export default function WavePlot({ stations }: WavePlotProps) {
             Plotly.newPlot(plotContainer, displayData(), buildLayout(), {
                 responsive: true,
                 modeBarButtonsToRemove: [
-                    "pan2d",
                     "zoomin2d",
                     "zoomout2d"
                 ]
@@ -346,10 +338,11 @@ export default function WavePlot({ stations }: WavePlotProps) {
                 // Remove samples outside of the window (pervent memory leak)
                 const samples = waves[key];
                 let keepFrom = 0;
+                const retentionLeftMs = windowRightMs - retentionMs;
 
                 while (
                     keepFrom < samples.times.length &&
-                    samples.times[keepFrom] < windowLeftMs
+                    samples.times[keepFrom] < retentionLeftMs
                 ) {
                     keepFrom += 1;
                 }
