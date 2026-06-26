@@ -64,6 +64,7 @@ export default function WavePlot({ stations }: WavePlotProps) {
     const [rightEdgeLabel, setRightEdgeLabel] = useState("--");
     const [stationControls, setStationControls] = useState<StationControl[]>([]);
 
+    const plotScrollerRef = useRef<HTMLDivElement>(null);
     const plotRef = useRef<HTMLDivElement>(null);
     const renderPlotRef = useRef<() => void>(() => undefined);
     const stationControlsRef = useRef<StationControl[]>([]);
@@ -105,8 +106,9 @@ export default function WavePlot({ stations }: WavePlotProps) {
         let ws: WebSocket | null = null;
         let stopped = false;
 
-        if (!plotRef.current) return;
+        if (!plotRef.current || !plotScrollerRef.current) return;
         const plotContainer = plotRef.current;
+        const plotScroller = plotScrollerRef.current;
 
         let windowLeftMs = 0;
         let windowRightMs = 0;
@@ -143,7 +145,7 @@ export default function WavePlot({ stations }: WavePlotProps) {
         const resizeObserver = new ResizeObserver(() => {
             renderPlotRef.current();
         });
-        resizeObserver.observe(plotContainer);
+        resizeObserver.observe(plotScroller);
 
         function displayWaveKeys() {
             const visibleStations = new Set(
@@ -203,7 +205,7 @@ export default function WavePlot({ stations }: WavePlotProps) {
         function buildLayout() {
             const visibleWaveKeys = displayWaveKeys();
             const allWaveCount = waveKeys.length;
-            const plotWidth = plotContainer.clientWidth || window.innerWidth - 40;
+            const plotWidth = plotScroller.clientWidth || window.innerWidth - 40;
 
             return {
                 title: {
@@ -211,7 +213,7 @@ export default function WavePlot({ stations }: WavePlotProps) {
                     font: { color: plotFontColor },
                 },
                 width: plotWidth,
-                height: Math.max(plotContainer.clientHeight, traceHeight * allWaveCount + 100, 360),
+                height: Math.max(plotScroller.clientHeight, traceHeight * allWaveCount + 100, 360),
                 paper_bgcolor: paperBackgroundColor,
                 plot_bgcolor: plotBackgroundColor,
                 font: { color: plotFontColor },
@@ -426,7 +428,9 @@ export default function WavePlot({ stations }: WavePlotProps) {
                     </button>
                 ))}
             </div>
-            <div className="min-h-[360px] flex-1 overflow-hidden rounded-md border border-slate-500/80 bg-[#13131f]" ref={plotRef} />
+            <div className="min-h-[360px] flex-1 overflow-auto rounded-md border border-slate-500/80 bg-[#13131f]" ref={plotScrollerRef}>
+                <div className="min-h-[360px] w-full" ref={plotRef} />
+            </div>
         </section>
     )
 }
