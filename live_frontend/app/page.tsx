@@ -117,7 +117,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#080b10] p-4 text-slate-100 sm:p-6">
-      <div ref={workspaceRef} className="relative min-h-[calc(100vh-2rem)] overflow-hidden sm:min-h-[calc(100vh-3rem)]">
+      <div ref={workspaceRef} className="relative min-h-[calc(100vh-2rem)] overflow-auto sm:min-h-[calc(100vh-3rem)]">
         <DraggablePanel
           active={activePanel === "map"}
           className="h-[490px] min-h-[330px] w-[390px] min-w-[300px] max-w-[calc(100%-1rem)]"

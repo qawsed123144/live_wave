@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Plotly from "plotly.js-dist-min";
-import { draftMode } from "next/headers";
 
 type WavePlotProps = {
     stations: Station[];
