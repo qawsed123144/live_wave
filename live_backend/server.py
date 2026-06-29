@@ -11,7 +11,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from obspy.clients.seedlink.easyseedlink import EasySeedLinkClient
 
 RETRY_TIME = 2
-ATTEMPT_MAX = 10
 
 SOURCES_PATH = Path(__file__).resolve().parents[1] / "seedlink_BATS.json"
 
@@ -26,7 +25,7 @@ SOURCES = load_sources()
 # Log
 handler = logging.StreamHandler()
 handler.setFormatter(jsonlogger.JsonFormatter(
-    "%(asctime)s %(level)s %(name)s %(message)s"))
+    "%(asctime)s %(levelname)s %(name)s %(message)s"))
 logging.root.addHandler(handler)
 logging.root.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
@@ -91,7 +90,7 @@ def stop_seedlink_client(client):
 def run_seedlink(source_name, server, streams, loop, queue, state):
     stop_event = state["stop_event"]
     attempt = 0
-    while attempt < ATTEMPT_MAX and not stop_event.is_set():
+    while not stop_event.is_set():
         attempt += 1
         logger.info("connecting", extra={
                     "attempt": attempt, "source": source_name, "server": server})

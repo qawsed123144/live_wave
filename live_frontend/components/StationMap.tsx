@@ -208,6 +208,7 @@ export default function StationMap({ setStations }: StationMapProps) {
             maxBounds: mapBounds
         })
         mapRef.current = map;
+        map.boxZoom.disable();
 
         map.on("load", () => {
             map.addSource("stations", {
