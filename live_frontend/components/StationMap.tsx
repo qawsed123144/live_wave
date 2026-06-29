@@ -424,7 +424,7 @@ export default function StationMap({ setStations }: StationMapProps) {
                     Alt: line select / Shift: box select
                 </div>
             </div>
-            <div className="relative mx-auto aspect-square min-h-[220px] max-h-full w-full max-w-full flex-1 overflow-hidden rounded-full border border-slate-500/80 bg-slate-950">
+            <div className="relative mx-auto aspect-square min-h-[220px] max-h-full w-full max-w-full flex-1 overflow-hidden rounded-sm border border-slate-500/80 bg-slate-950">
                 <div className="w-full h-full" ref={containerRef} />
 
                 {dragSelection && (
