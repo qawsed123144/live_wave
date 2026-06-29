@@ -99,7 +99,7 @@ function DraggablePanel({
     <div
       ref={panelRef}
       className={`absolute flex flex-col overflow-auto rounded-lg ${maximized ? "" : "resize"} ${active ? "z-20" : "z-10"} ${className}`}
-      style={maximized ? { inset: 0 } : { left: position.x, top: position.y }}
+      style={maximized ? { bottom: 0, height: "auto", left: 0, right: 0, top: 0, width: "auto" } : { left: position.x, top: position.y }}
       onPointerDown={onActivate}
     >
       <div
