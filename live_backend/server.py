@@ -5,10 +5,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from live_backend.data import SOURCES
-from live_backend.log_custom import setup_logging
-from live_backend.seedlink import SeedLinkManager
-from live_backend.subscriptions import SubscriptionManager, parse_subscription
+from data import SOURCES
+from log_custom import setup_logging
+from seedlink import SeedLinkManager
+from subscriptions import SubscriptionManager, parse_subscription
 
 
 setup_logging()
