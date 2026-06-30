@@ -3,37 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Plotly from "plotly.js-dist-min";
 
-type WavePlotProps = {
-    stations: Station[];
-}
-
-type TraceMessage = {
-    source: string;
-    network: string;
-    station: string;
-    channel: string;
-    starttime: string;
-    sampling_rate: number;
-    data: number[];
-};
-
-type Station = {
-    source: string;
-    network: string;
-    station: string;
-    selector: string;
-    constant: number;
-};
-
-type StationControl = Station & {
-    visible: boolean;
-    timedOut: boolean;
-};
-
-type WaveSamples = {
-    times: number[];
-    values: number[];
-};
+import type { PlotlyEventTarget, StationControl, TraceMessage, WavePlotProps, WaveSamples } from "@/lib/type";
 
 const windowMs = 90000;
 const dataTimeoutMs = 180000;
@@ -281,9 +251,7 @@ export default function WavePlot({ stations }: WavePlotProps) {
             })
 
             // bind hover events
-            const plotEvents = plotContainer as HTMLDivElement & {
-                on(eventName: string, handler: (event: Record<string, unknown>) => void): void;
-            };
+            const plotEvents = plotContainer as PlotlyEventTarget;
             plotEvents.on('plotly_hover', (event) => {
                 const points = event.points;
                 const point = Array.isArray(points) ? points[0] as Record<string, unknown> | undefined : undefined;

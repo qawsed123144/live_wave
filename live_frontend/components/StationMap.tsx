@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl, { type Map as MapLibreMap, type MapMouseEvent, type PointLike } from "maplibre-gl";
 
 import stationsJSON from "@/data/seedlink_BATS.json";
+import type { DragSelection, ScreenPoint, Station, StationMapProps } from "@/lib/type";
 
 const mapStyleDefaultLight = "https://tiles.openfreemap.org/styles/liberty";
 const mapStyleDefaultDark = "https://tiles.openfreemap.org/styles/dark"
@@ -15,28 +16,6 @@ const mapZoom: number = 6.8;
 const mapBounds: [number, number, number, number] = [116, 20, 125, 27];
 const lineSelectPx = 14
 const startClickDragPx = 4
-
-type Station = {
-    source: string;
-    network: string;
-    station: string;
-    selector: string;
-    constant: number;
-    lon: number;
-    lat: number;
-};
-type StationMapProps = {
-    setStations: (stations: Station[]) => void
-}
-type ScreenPoint = {
-    x: number;
-    y: number;
-};
-type DragSelection = {
-    start: ScreenPoint;
-    current: ScreenPoint;
-    mode: "line" | "box";
-};
 
 function stationId(station: Station) {
     return `${station.network}.${station.station}.${station.selector}`;

@@ -1,39 +1,10 @@
 "use client";
 import dynamic from "next/dynamic";
-import { type ReactNode, type RefObject, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
+import type { DraggablePanelProps, PanelId, Position, Station } from "@/lib/type";
 const WavePlot = dynamic(() => import("../components/WavePlot"), { ssr: false });
 const StationMap = dynamic(() => import("../components/StationMap"), { ssr: false });
-
-type Station = {
-  source: string;
-  network: string;
-  station: string;
-  selector: string;
-  constant: number;
-  lon: number;
-  lat: number;
-};
-
-type Position = {
-  x: number;
-  y: number;
-};
-
-type PanelId = "map" | "wave";
-
-type DraggablePanelProps = {
-  active: boolean;
-  children: ReactNode;
-  className?: string;
-  containerRef: RefObject<HTMLDivElement | null>;
-  headerAction?: ReactNode;
-  label: string;
-  maximized?: boolean;
-  onActivate: () => void;
-  onMove: (position: Position) => void;
-  position: Position;
-};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
