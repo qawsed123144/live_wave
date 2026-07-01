@@ -9,7 +9,7 @@ RETRY_TIME = 2
 logger = logging.getLogger(__name__)
 
 
-class MyClient(EasySeedLinkClient):
+class Client(EasySeedLinkClient):
     def __init__(self, server, source_name, loop, queue, stop_event=None):
         super().__init__(server)
         self._server = server
@@ -70,7 +70,7 @@ def run_seedlink(source_name, server, streams, loop, queue, state):
             extra={"attempt": attempt, "source": source_name, "server": server},
         )
         try:
-            client = MyClient(server, source_name, loop, queue, stop_event)
+            client = Client(server, source_name, loop, queue, stop_event)
             state["client"] = client
 
             if stop_event.is_set():
