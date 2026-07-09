@@ -55,7 +55,7 @@ function normalizeBox(start: ScreenPoint, current: ScreenPoint): [PointLike, Poi
     ];
 }
 
-export default function StationMap({ setStations }: StationMapProps) {
+export default function StationMap({ setStations, hoveredStationId, onHoverStation }: StationMapProps) {
     const [selectedStations, setSelectedStations] = useState<Map<string, Station>>(new Map());
     const [dragSelection, setDragSelection] = useState<DragSelection | null>(null);
 
@@ -63,6 +63,7 @@ export default function StationMap({ setStations }: StationMapProps) {
     const mapRef = useRef<MapLibreMap | null>(null);
     const selectedStationsRef = useRef<Map<string, Station>>(new Map());
     const isDraggingSelectionRef = useRef(false);
+    const waveHoveredStationIdRef = useRef<string | null>(null);
 
     const allStations = useMemo(() => {
         return stationsJSON.flatMap((source) =>
@@ -206,6 +207,7 @@ export default function StationMap({ setStations }: StationMapProps) {
                         [
                             "any",
                             ["boolean", ["feature-state", "hover"], false],
+                            ["boolean", ["feature-state", "waveHover"], false],
                             ["boolean", ["feature-state", "selected"], false],
                         ],
                         9,
@@ -216,6 +218,7 @@ export default function StationMap({ setStations }: StationMapProps) {
                         [
                             "any",
                             ["boolean", ["feature-state", "hover"], false],
+                            ["boolean", ["feature-state", "waveHover"], false],
                             ["boolean", ["feature-state", "selected"], false],
                         ],
                         "#ffffff",
@@ -226,6 +229,7 @@ export default function StationMap({ setStations }: StationMapProps) {
                         [
                             "any",
                             ["boolean", ["feature-state", "hover"], false],
+                            ["boolean", ["feature-state", "waveHover"], false],
                             ["boolean", ["feature-state", "selected"], false],
                         ],
                         "#dc143c",
@@ -236,6 +240,7 @@ export default function StationMap({ setStations }: StationMapProps) {
                         [
                             "any",
                             ["boolean", ["feature-state", "hover"], false],
+                            ["boolean", ["feature-state", "waveHover"], false],
                             ["boolean", ["feature-state", "selected"], false],
                         ],
                         3,
@@ -264,14 +269,18 @@ export default function StationMap({ setStations }: StationMapProps) {
                     "text-halo-width": 1.5,
                     "text-opacity": [
                         "case",
-                        ["boolean", ["feature-state", "hover"], false],
+                        [
+                            "any",
+                            ["boolean", ["feature-state", "hover"], false],
+                            ["boolean", ["feature-state", "waveHover"], false],
+                        ],
                         1,
                         0,
                     ],
                 },
             })
 
-            let hoveredStationId: string | null = null;
+            let mapHoveredStationId: string | null = null;
 
             map.on("mousemove", "station-circles", (e) => {
                 if (isDraggingSelectionRef.current) return;
@@ -282,31 +291,34 @@ export default function StationMap({ setStations }: StationMapProps) {
                 const id = String(feature?.properties?.id ?? "");
                 if (!id) return;
 
-                if (hoveredStationId !== null && hoveredStationId !== id) {
+                onHoverStation(id);
+
+                if (mapHoveredStationId !== null && mapHoveredStationId !== id) {
                     map.setFeatureState(
-                        { source: "stations", id: hoveredStationId },
+                        { source: "stations", id: mapHoveredStationId },
                         { hover: false }
                     );
                 }
 
-                hoveredStationId = id;
+                mapHoveredStationId = id;
 
                 map.setFeatureState(
-                    { source: "stations", id: hoveredStationId },
+                    { source: "stations", id: mapHoveredStationId },
                     { hover: true }
                 );
             });
             map.on("mouseleave", "station-circles", () => {
                 map.getCanvas().style.cursor = "";
 
-                if (hoveredStationId !== null) {
+                if (mapHoveredStationId !== null) {
                     map.setFeatureState(
-                        { source: "stations", id: hoveredStationId },
+                        { source: "stations", id: mapHoveredStationId },
                         { hover: false }
                     );
                 }
 
-                hoveredStationId = null;
+                mapHoveredStationId = null;
+                onHoverStation(null);
             });
             map.on("click", "station-circles", (e) => {
                 if (isDraggingSelectionRef.current) return;
@@ -374,9 +386,13 @@ export default function StationMap({ setStations }: StationMapProps) {
             })
         })
 
-
-
         return () => {
+            if (waveHoveredStationIdRef.current) {
+                map.setFeatureState(
+                    { source: "stations", id: waveHoveredStationIdRef.current },
+                    { waveHover: false }
+                );
+            }
             map.remove();
             mapRef.current = null;
         };
@@ -395,6 +411,29 @@ export default function StationMap({ setStations }: StationMapProps) {
             resizeObserver.disconnect();
         };
     }, []);
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
+        if (!map.getSource("stations")) return;
+
+        const previousId = waveHoveredStationIdRef.current;
+
+        if (previousId && previousId !== hoveredStationId) {
+            map.setFeatureState(
+                { source: "stations", id: previousId },
+                { waveHover: false }
+            );
+        }
+
+        if (hoveredStationId) {
+            map.setFeatureState(
+                { source: "stations", id: hoveredStationId },
+                { waveHover: true }
+            );
+        }
+
+        waveHoveredStationIdRef.current = hoveredStationId ?? null;
+    }, [hoveredStationId]);
 
     return (
         <section className="flex h-full w-full flex-col overflow-auto rounded-b-lg border border-slate-600/90 bg-[#151b24] p-3 shadow-xl shadow-black/35">

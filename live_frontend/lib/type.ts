@@ -32,6 +32,14 @@ export type DraggablePanelProps = {
 
 export type StationMapProps = {
   setStations: (stations: Station[]) => void;
+  hoveredStationId: string | null;
+  onHoverStation: (stationId: string | null) => void
+};
+
+export type WavePlotProps = {
+  stations: Station[];
+  hoveredStationId: string | null;
+  onHoverStation: (stationId: string | null) => void
 };
 
 export type ScreenPoint = {
@@ -43,10 +51,6 @@ export type DragSelection = {
   start: ScreenPoint;
   current: ScreenPoint;
   mode: "line" | "box";
-};
-
-export type WavePlotProps = {
-  stations: Station[];
 };
 
 export type TraceMessage = {

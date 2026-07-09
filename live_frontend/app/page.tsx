@@ -93,6 +93,7 @@ export default function Home() {
   const [waveOnly, setWaveOnly] = useState(false);
   const [mapPosition, setMapPosition] = useState<Position>({ x: 0, y: 0 });
   const [wavePosition, setWavePosition] = useState<Position>({ x: 420, y: 0 });
+  const [hoveredStationId, setHoveredStationId] = useState<string | null>(null);
 
   const workspaceRef = useRef<HTMLDivElement | null>(null);
 
@@ -124,7 +125,7 @@ export default function Home() {
             position={mapPosition}
           >
             {showMap && (
-              <StationMap setStations={setStations} />
+              <StationMap setStations={setStations} hoveredStationId={hoveredStationId} onHoverStation={setHoveredStationId} />
             )}
           </DraggablePanel>
         )}
@@ -168,7 +169,7 @@ export default function Home() {
           position={wavePosition}
         >
           {showWave && (
-            <WavePlot stations={stations} />
+            <WavePlot stations={stations} hoveredStationId={hoveredStationId} onHoverStation={setHoveredStationId} />
           )}
         </DraggablePanel>
       </div>

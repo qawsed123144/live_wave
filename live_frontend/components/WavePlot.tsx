@@ -29,7 +29,7 @@ const plotBackgroundColor = "#1e1e2e";
 const gridColor = 'rgba(49, 50, 68, 0.3)';
 const gridColorHover = 'rgba(49, 50, 68, 1)';
 
-export default function WavePlot({ stations }: WavePlotProps) {
+export default function WavePlot({ stations, hoveredStationId, onHoverStation }: WavePlotProps) {
     const [status, setStatus] = useState("idle");
     const [rightEdgeLabel, setRightEdgeLabel] = useState("--");
     const [stationControls, setStationControls] = useState<StationControl[]>([]);
@@ -38,7 +38,10 @@ export default function WavePlot({ stations }: WavePlotProps) {
     const plotRef = useRef<HTMLDivElement>(null);
     const renderPlotRef = useRef<() => void>(() => undefined);
     const stationControlsRef = useRef<StationControl[]>([]);
+    const hoveredStationIdRef = useRef<string | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
+
+    hoveredStationIdRef.current = hoveredStationId;
 
     function sendSubscription(controls: StationControl[]) {
         if (wsRef.current?.readyState !== WebSocket.OPEN) return;
@@ -88,6 +91,7 @@ export default function WavePlot({ stations }: WavePlotProps) {
         const waves: Record<string, WaveSamples> = {};
 
         let hoveredIndex: number | null = null;
+        let syncingPlotHover = false;
         let uiRevision: string | number = "live";
 
         function updateUserRange(event: Record<string, unknown>) {
@@ -107,7 +111,9 @@ export default function WavePlot({ stations }: WavePlotProps) {
         }
 
         function renderPlot() {
-            void Plotly.react(plotContainer, displayData(), buildLayout());
+            void Promise.resolve(Plotly.react(plotContainer, displayData(), buildLayout())).then(() => {
+                syncExternalPlotHover();
+            });
         }
 
         renderPlotRef.current = renderPlot;
@@ -147,6 +153,49 @@ export default function WavePlot({ stations }: WavePlotProps) {
             return { x, y };
         }
 
+        function clearProgrammaticHover() {
+            window.setTimeout(() => {
+                syncingPlotHover = false;
+            }, 0);
+        }
+
+        function syncExternalPlotHover() {
+            if (hoveredIndex !== null) return;
+
+            const hoveredKey = hoveredStationIdRef.current;
+            if (!hoveredKey) {
+                syncingPlotHover = true;
+                Plotly.Fx.unhover(plotContainer);
+                clearProgrammaticHover();
+                return;
+            }
+
+            const visibleWaveKeys = displayWaveKeys();
+            const curveNumber = visibleWaveKeys.indexOf(hoveredKey);
+            if (curveNumber < 0) {
+                syncingPlotHover = true;
+                Plotly.Fx.unhover(plotContainer);
+                clearProgrammaticHover();
+                return;
+            }
+
+            const { x } = displayWave(hoveredKey);
+            if (x.length === 0) {
+                syncingPlotHover = true;
+                Plotly.Fx.unhover(plotContainer);
+                clearProgrammaticHover();
+                return;
+            }
+
+            syncingPlotHover = true;
+            Plotly.Fx.hover(
+                plotContainer,
+                [{ curveNumber, pointNumber: x.length - 1 }],
+                ["xy"]
+            );
+            clearProgrammaticHover();
+        }
+
         function displayData() {
             const waveKeys = displayWaveKeys();
 
@@ -155,18 +204,23 @@ export default function WavePlot({ stations }: WavePlotProps) {
                 const stationIndex = stationControlsRef.current.findIndex((station) =>
                     key === `${station.network}.${station.station}.${station.selector}`
                 );
+                const externalHoveredStationId = hoveredStationIdRef.current;
+                const isHovered =
+                    key === externalHoveredStationId || index === hoveredIndex;
 
                 return {
-                    type: "scattergl",
+                    type: "scatter",
                     mode: "lines",
                     name: key,
-                    hoverinfo: 'name',
+                    hoverinfo: "name",
                     x,
                     y,
-                    opacity: hoveredIndex !== null ? (index === hoveredIndex ? 1 : 0.8) : 1,
+                    opacity: externalHoveredStationId !== null || hoveredIndex !== null
+                        ? isHovered ? 1 : 0.8
+                        : 1,
                     line: {
                         color: waveColors[Math.max(stationIndex, 0) % waveColors.length],
-                        width: index === hoveredIndex ? 2 : 1,
+                        width: isHovered ? 2 : 1,
                     },
                 };
             });
@@ -176,6 +230,7 @@ export default function WavePlot({ stations }: WavePlotProps) {
             const visibleWaveKeys = displayWaveKeys();
             const allWaveCount = waveKeys.length;
             const plotWidth = plotScroller.clientWidth || window.innerWidth - 40;
+            const externalHoveredStationId = hoveredStationIdRef.current;
 
             return {
                 title: {
@@ -216,7 +271,7 @@ export default function WavePlot({ stations }: WavePlotProps) {
                     y0: (waveKeys.length - waveKeys.indexOf(key) - 1) * traceSpacing,
                     y1: (waveKeys.length - waveKeys.indexOf(key) - 1) * traceSpacing,
                     line: {
-                        color: i === hoveredIndex ? gridColorHover : gridColor,
+                        color: i === hoveredIndex || key === externalHoveredStationId ? gridColorHover : gridColor,
                     }
                 })),
                 draftMode: "pan"
@@ -253,14 +308,25 @@ export default function WavePlot({ stations }: WavePlotProps) {
             // bind hover events
             const plotEvents = plotContainer as PlotlyEventTarget;
             plotEvents.on('plotly_hover', (event) => {
+                if (syncingPlotHover) return;
+
                 const points = event.points;
                 const point = Array.isArray(points) ? points[0] as Record<string, unknown> | undefined : undefined;
                 if (typeof point?.curveNumber !== "number") return;
                 hoveredIndex = point.curveNumber;
+                const hoveredKey = displayWaveKeys()[point.curveNumber];
+                const nextHoveredStationId = hoveredKey ?? null;
+                hoveredStationIdRef.current = nextHoveredStationId;
+                onHoverStation(nextHoveredStationId);
+
                 renderPlot();
             });
             plotEvents.on('plotly_unhover', () => {
+                if (syncingPlotHover) return;
+
                 hoveredIndex = null;
+                hoveredStationIdRef.current = null;
+                onHoverStation(null)
                 renderPlot();
             });
             plotEvents.on('plotly_relayout', updateUserRange);
@@ -366,6 +432,10 @@ export default function WavePlot({ stations }: WavePlotProps) {
             }
         };
     }, [stations])
+
+    useEffect(() => {
+        renderPlotRef.current();
+    }, [hoveredStationId]);
 
     return (
         <section className="flex h-full w-full flex-col overflow-auto rounded-b-lg border border-slate-600/90 bg-[#151b24] p-3 shadow-xl shadow-black/35">
