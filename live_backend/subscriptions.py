@@ -58,6 +58,9 @@ class SubscriptionManager:
 
         if not targets:
             return
+        
+        trace = trace.copy()
+        trace.detrend("demean")
 
         payload = json.dumps(
             {
