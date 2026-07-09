@@ -11,7 +11,7 @@ const retentionMs = 10 * 60 * 1000;
 const websocketUrl = "ws://127.0.0.1:8000/live-wave";
 const traceScale = 200000;
 const traceSpacing = 2;
-const traceHeight = 30;
+const traceHeight = 50;
 
 const waveColors = [
     "#89b4fa",
@@ -146,8 +146,16 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation }:
                 const constant = stationControlsRef.current[originalIndex]?.constant ?? 1;
                 const time = samples.times[i];
                 if (time < displayLeftMs || time > displayRightMs) continue;
+
+                const traceClipHeight = traceSpacing * 0.5;
+                const scaledValue = samples.values[i] * constant * traceScale;
+                const clippedValue = Math.max(
+                    -traceClipHeight,
+                    Math.min(traceClipHeight, scaledValue)
+                );
+
                 x.push(time);
-                y.push(offset + (samples.values[i] * constant * traceScale));
+                y.push(offset + clippedValue);
             }
 
             return { x, y };
