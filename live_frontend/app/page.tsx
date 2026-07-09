@@ -100,10 +100,9 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#080b10] p-4 text-slate-100 sm:p-6">
       <div ref={workspaceRef} className="relative min-h-[calc(100vh-2rem)] overflow-auto sm:min-h-[calc(100vh-3rem)]">
-        {!waveOnly && (
-          <DraggablePanel
+        <DraggablePanel
             active={activePanel === "map"}
-            className={`${showMap ? "h-[490px] min-h-[330px]" : ""} w-[390px] min-w-[300px] max-w-[calc(100%-1rem)]`}
+            className={`${waveOnly ? "hidden" : ""} ${showMap ? "h-[490px] min-h-[330px]" : ""} w-[390px] min-w-[300px] max-w-[calc(100%-1rem)]`}
             containerRef={workspaceRef}
             headerAction={
               <button
@@ -124,11 +123,10 @@ export default function Home() {
             onMove={setMapPosition}
             position={mapPosition}
           >
-            {showMap && (
+            <div className={showMap ? "contents" : "hidden"}>
               <StationMap setStations={setStations} hoveredStationId={hoveredStationId} onHoverStation={setHoveredStationId} />
-            )}
+            </div>
           </DraggablePanel>
-        )}
         <DraggablePanel
           active={activePanel === "wave"}
           className={waveOnly ? "h-full w-full" : `${showWave ? "h-[660px] min-h-[430px]" : ""} w-[980px] min-w-[360px] max-w-[calc(100%-1rem)]`}
@@ -168,9 +166,9 @@ export default function Home() {
           onMove={setWavePosition}
           position={wavePosition}
         >
-          {showWave && (
+          <div className={showWave ? "contents" : "hidden"}>
             <WavePlot stations={stations} hoveredStationId={hoveredStationId} onHoverStation={setHoveredStationId} />
-          )}
+          </div>
         </DraggablePanel>
       </div>
     </main>
