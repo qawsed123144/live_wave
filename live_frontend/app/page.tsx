@@ -167,7 +167,12 @@ export default function Home() {
           position={wavePosition}
         >
           <div className={showWave ? "contents" : "hidden"}>
-            <WavePlot stations={stations} hoveredStationId={hoveredStationId} onHoverStation={setHoveredStationId} />
+            <WavePlot
+              stations={stations}
+              hoveredStationId={hoveredStationId}
+              onHoverStation={setHoveredStationId}
+              waveOnly={waveOnly}
+            />
           </div>
         </DraggablePanel>
       </div>

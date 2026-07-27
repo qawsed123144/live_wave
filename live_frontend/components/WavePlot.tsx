@@ -29,7 +29,7 @@ const plotBackgroundColor = "#1e1e2e";
 const gridColor = 'rgba(49, 50, 68, 0.3)';
 const gridColorHover = 'rgba(49, 50, 68, 1)';
 
-export default function WavePlot({ stations, hoveredStationId, onHoverStation }: WavePlotProps) {
+export default function WavePlot({ stations, hoveredStationId, onHoverStation, waveOnly }: WavePlotProps) {
     const [status, setStatus] = useState("idle");
     const [rightEdgeLabel, setRightEdgeLabel] = useState("--");
     const [stationControls, setStationControls] = useState<StationControl[]>([]);
@@ -447,33 +447,37 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation }:
 
     return (
         <section className="flex h-full w-full flex-col overflow-auto rounded-b-lg border border-slate-600/90 bg-[#151b24] p-3 shadow-xl shadow-black/35">
-            <div className="mb-3 grid gap-2 text-xs text-slate-300 sm:grid-cols-3">
-                <div className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2">WebSocket: {status}</div>
-                <div className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2">Stations: {stationControls.filter((station) => station.visible).length} / {stationControls.length}</div>
-                <div className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2">Right edge: {rightEdgeLabel}</div>
-            </div>
-            <div className="mb-4 grid gap-2 text-xs sm:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9">
-                {stationControls.map((station) => (
-                    <button
-                        key={`${station.network}.${station.station}.${station.selector}`}
-                        type="button"
-                        disabled={station.timedOut}
-                        onClick={() => toggleStationVisibility(station.network, station.station, station.selector)}
-                        className={`rounded-md border px-2 py-2 text-left shadow-sm transition ${station.timedOut
-                            ? "cursor-not-allowed border-slate-700 bg-slate-800 text-slate-500"
-                            : station.visible
-                                ? "border-cyan-400/60 bg-cyan-400/10 text-cyan-100"
-                                : "border-slate-700 bg-slate-950/70 text-slate-500"
-                            }`}
-                    >
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0 truncate font-mono font-semibold">
-                                {station.network}.{station.station}.{station.selector}
-                            </div>
-                        </div>
-                    </button>
-                ))}
-            </div>
+            {!waveOnly && (
+                <>
+                    <div className="mb-3 grid gap-2 text-xs text-slate-300 sm:grid-cols-3">
+                        <div className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2">WebSocket: {status}</div>
+                        <div className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2">Stations: {stationControls.filter((station) => station.visible).length} / {stationControls.length}</div>
+                        <div className="rounded border border-slate-700 bg-slate-950/60 px-3 py-2">Right edge: {rightEdgeLabel}</div>
+                    </div>
+                    <div className="mb-4 grid gap-2 text-xs sm:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9">
+                        {stationControls.map((station) => (
+                            <button
+                                key={`${station.network}.${station.station}.${station.selector}`}
+                                type="button"
+                                disabled={station.timedOut}
+                                onClick={() => toggleStationVisibility(station.network, station.station, station.selector)}
+                                className={`rounded-md border px-2 py-2 text-left shadow-sm transition ${station.timedOut
+                                    ? "cursor-not-allowed border-slate-700 bg-slate-800 text-slate-500"
+                                    : station.visible
+                                        ? "border-cyan-400/60 bg-cyan-400/10 text-cyan-100"
+                                        : "border-slate-700 bg-slate-950/70 text-slate-500"
+                                    }`}
+                            >
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="min-w-0 truncate font-mono font-semibold">
+                                        {station.network}.{station.station}.{station.selector}
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
             <div className="min-h-[360px] flex-1 overflow-auto rounded-md border border-slate-500/80 bg-[#13131f]" ref={plotScrollerRef}>
                 <div className="min-h-[360px] w-full" ref={plotRef} />
             </div>

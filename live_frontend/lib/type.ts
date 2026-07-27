@@ -39,7 +39,8 @@ export type StationMapProps = {
 export type WavePlotProps = {
   stations: Station[];
   hoveredStationId: string | null;
-  onHoverStation: (stationId: string | null) => void
+  onHoverStation: (stationId: string | null) => void;
+  waveOnly: boolean;
 };
 
 export type ScreenPoint = {
