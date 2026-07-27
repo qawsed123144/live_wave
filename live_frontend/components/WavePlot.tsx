@@ -12,6 +12,7 @@ const websocketUrl = "ws://127.0.0.1:8000/live-wave";
 const traceScale = 200000;
 const traceSpacing = 2;
 const traceHeight = 50;
+const minimumPlotHeight = 180;
 
 const waveColors = [
     "#89b4fa",
@@ -86,6 +87,8 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
         let windowLeftMs = 0;
         let windowRightMs = 0;
         let userRangeMs: [number, number] | null = null;
+        let userYRange: [number, number] | null = null;
+        let userPlotHeight: number | null = null;
 
         let waveKeys: string[] = [];
         const waves: Record<string, WaveSamples> = {};
@@ -94,7 +97,37 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
         let syncingPlotHover = false;
         let uiRevision: string | number = "live";
 
+        function defaultPlotHeight() {
+            return Math.max(plotScroller.clientHeight, traceHeight * waveKeys.length + 100, 360);
+        }
+
         function updateUserRange(event: Record<string, unknown>) {
+            if (event["yaxis.autorange"] === true) {
+                userYRange = null;
+                userPlotHeight = null;
+            } else {
+                const yRange = event["yaxis.range"];
+                const bottom = Number(Array.isArray(yRange) ? yRange[0] : event["yaxis.range[0]"]);
+                const top = Number(Array.isArray(yRange) ? yRange[1] : event["yaxis.range[1]"]);
+
+                if (Number.isFinite(bottom) && Number.isFinite(top) && top > bottom) {
+                    userYRange = [bottom, top];
+
+                    const fullRange = (waveKeys.length + 1) * traceSpacing;
+                    const zoomedRange = top - bottom;
+                    const nextHeight = Math.min(
+                        Math.max(
+                            Math.round(defaultPlotHeight() * (fullRange / zoomedRange)),
+                            minimumPlotHeight
+                        ),
+                        defaultPlotHeight()
+                    );
+
+                    userPlotHeight = nextHeight;
+                    void Plotly.relayout(plotContainer, { height: nextHeight });
+                }
+            }
+
             if (event["xaxis.autorange"] === true) {
                 userRangeMs = null;
                 return;
@@ -122,6 +155,21 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
             renderPlotRef.current();
         });
         resizeObserver.observe(plotScroller);
+
+        function zoomYAxis(event: WheelEvent) {
+            event.preventDefault();
+
+            const [bottom, top] = userYRange ?? [-traceSpacing, waveKeys.length * traceSpacing];
+            const center = (bottom + top) / 2;
+            const zoomFactor = event.deltaY < 0 ? 0.9 : 1.1;
+            const halfRange = ((top - bottom) / 2) * zoomFactor;
+            const nextRange: [number, number] = [center - halfRange, center + halfRange];
+
+            userYRange = nextRange;
+            void Plotly.relayout(plotContainer, { 'yaxis.range': nextRange });
+        }
+
+        plotContainer.addEventListener('wheel', zoomYAxis, { passive: false });
 
         function displayWaveKeys() {
             const visibleStations = new Set(
@@ -246,7 +294,7 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
                     font: { color: plotFontColor },
                 },
                 width: plotWidth,
-                height: Math.max(plotScroller.clientHeight, traceHeight * allWaveCount + 100, 360),
+                height: userPlotHeight ?? defaultPlotHeight(),
                 paper_bgcolor: paperBackgroundColor,
                 plot_bgcolor: plotBackgroundColor,
                 font: { color: plotFontColor },
@@ -260,7 +308,7 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
                 },
                 yaxis: {
                     autorange: false,
-                    range: [-traceSpacing, allWaveCount * traceSpacing],
+                    range: userYRange ?? [-traceSpacing, allWaveCount * traceSpacing],
                     tickvals: visibleWaveKeys.map((key) => (waveKeys.length - waveKeys.indexOf(key) - 1) * traceSpacing),
                     ticktext: visibleWaveKeys.map(k => k),
                     showgrid: false,
@@ -282,7 +330,7 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
                         color: i === hoveredIndex || key === externalHoveredStationId ? gridColorHover : gridColor,
                     }
                 })),
-                draftMode: "pan"
+                dragmode: "zoom"
             };
         }
 
@@ -307,10 +355,7 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
 
             Plotly.newPlot(plotContainer, displayData(), buildLayout(), {
                 responsive: true,
-                modeBarButtonsToRemove: [
-                    "zoomin2d",
-                    "zoomout2d"
-                ]
+                scrollZoom: false,
             })
 
             // bind hover events
@@ -341,6 +386,8 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
             plotEvents.on('plotly_doubleclick', () => {
                 uiRevision = Date.now();
                 userRangeMs = null;
+                userYRange = null;
+                userPlotHeight = null;
                 renderPlot();
             });
 
@@ -432,6 +479,7 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
         return () => {
             stopped = true;
             resizeObserver.disconnect();
+            plotContainer.removeEventListener('wheel', zoomYAxis);
             renderPlotRef.current = () => undefined;
             wsRef.current = null;
             ws?.close();
