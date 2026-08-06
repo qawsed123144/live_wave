@@ -16,6 +16,13 @@ const mapZoom: number = 6.8;
 const mapBounds: [number, number, number, number] = [116, 20, 125, 27];
 const lineSelectPx = 14
 const startClickDragPx = 4
+const sortOptions = [
+    { value: "W->E", label: "W → E" },
+    { value: "E->W", label: "E → W" },
+    { value: "S->N", label: "S → N" },
+    { value: "N->S", label: "N → S" },
+] as const;
+type SortDirection = typeof sortOptions[number]["value"];
 
 function stationId(station: Station) {
     return `${station.network}.${station.station}.${station.selector}`;
@@ -58,6 +65,7 @@ function normalizeBox(start: ScreenPoint, current: ScreenPoint): [PointLike, Poi
 export default function StationMap({ setStations, hoveredStationId, onHoverStation }: StationMapProps) {
     const [selectedStations, setSelectedStations] = useState<Map<string, Station>>(new Map());
     const [dragSelection, setDragSelection] = useState<DragSelection | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection | null>(null);
 
     const containerRef = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
@@ -167,7 +175,19 @@ export default function StationMap({ setStations, hoveredStationId, onHoverStati
         addStations(ids);
     }
     function submit() {
-        setStations(Array.from(selectedStationsRef.current.values()));
+        const selection = new Map(selectedStationsRef.current);
+        const stations = Array.from(selection.values());
+
+        setSelection(selection);
+        for (const id of selection.keys()) {
+            setFeatureSelected(id, true);
+        }
+        if (sortDirection) {
+            const coordinate = sortDirection === "W->E" || sortDirection === "E->W" ? "lon" : "lat";
+            const direction = sortDirection === "W->E" || sortDirection === "S->N" ? 1 : -1;
+            stations.sort((a, b) => (a[coordinate] - b[coordinate]) * direction);
+        }
+        setStations(stations);
     }
     function clear() {
         for (const id of selectedStationsRef.current.keys()) {
@@ -475,7 +495,23 @@ export default function StationMap({ setStations, hoveredStationId, onHoverStati
                     </svg>
                 )}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-4 gap-2">
+                {sortOptions.map((option) => (
+                    <button
+                        key={option.value}
+                        type="button"
+                        aria-pressed={sortDirection === option.value}
+                        className={`whitespace-nowrap rounded-md border px-1 py-1.5 font-mono text-xs transition ${sortDirection === option.value
+                            ? "border-cyan-400/60 bg-cyan-400/10 text-cyan-100"
+                            : "border-slate-600 bg-slate-800/70 text-slate-300 hover:bg-slate-700"
+                            }`}
+                        onClick={() => setSortDirection((current) => current === option.value ? null : option.value)}
+                    >
+                        {option.label}
+                    </button>
+                ))}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
                 <button
                     type="button"
                     // disabled={ }
