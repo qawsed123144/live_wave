@@ -421,8 +421,12 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
 
                 setRightEdgeLabel(new Date(windowRightMs).toLocaleTimeString());
 
-                waves[key].times = [...waves[key].times, ...traceTimeGrids];
-                waves[key].values = [...waves[key].values, ...trace.data];
+                const lastTime = waves[key].times.at(-1) ?? -Infinity;
+                const firstNewIndex = traceTimeGrids.findIndex((time) => time > lastTime);
+                if (firstNewIndex === -1) return;
+
+                waves[key].times.push(...traceTimeGrids.slice(firstNewIndex));
+                waves[key].values.push(...trace.data.slice(firstNewIndex));
 
                 // Remove samples outside of the window (pervent memory leak)
                 const samples = waves[key];
