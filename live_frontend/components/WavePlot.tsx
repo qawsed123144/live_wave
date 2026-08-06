@@ -24,6 +24,7 @@ const waveColors = [
     "#f9e2af",
     "#94e2d5",
 ];
+
 const plotFontColor = "#cdd6f4";
 const paperBackgroundColor = "#13131f";
 const plotBackgroundColor = "#1e1e2e";
@@ -60,7 +61,6 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
             })
         );
     }
-
     function toggleStationVisibility(network: string, station: string, selector: string) {
         const nextControls = stationControlsRef.current.map((control) =>
             control.network === network && control.station === station && control.selector === selector
@@ -72,7 +72,6 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
         setStationControls(nextControls);
         renderPlotRef.current();
     }
-
 
     useEffect(() => {
         if (stations.length === 0) return;
@@ -189,9 +188,9 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
             const originalIndex = waveKeys.indexOf(key);
             const offset = (waveKeys.length - originalIndex - 1) * traceSpacing;
             const [displayLeftMs, displayRightMs] = userRangeMs ?? [windowLeftMs, windowRightMs];
+            const constant = stationControlsRef.current[originalIndex]?.constant ?? 1;
 
             for (let i = 0; i < samples.times.length; i += 1) {
-                const constant = stationControlsRef.current[originalIndex]?.constant ?? 1;
                 const time = samples.times[i];
                 if (time < displayLeftMs || time > displayRightMs) continue;
 
@@ -265,7 +264,7 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
                     key === externalHoveredStationId || index === hoveredIndex;
 
                 return {
-                    type: "scatter",
+                    type: "scattergl",
                     mode: "lines",
                     name: key,
                     hoverinfo: "name",
@@ -334,6 +333,7 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
             };
         }
 
+
         async function start() {
             setStatus("loading stations");
 
@@ -390,7 +390,6 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
                 userPlotHeight = null;
                 renderPlot();
             });
-
 
             ws = new WebSocket(websocketUrl);
             wsRef.current = ws;
