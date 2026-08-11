@@ -8,7 +8,7 @@ import type { PlotlyEventTarget, StationControl, TraceMessage, WavePlotProps, Wa
 const windowMs = 90000;
 const dataTimeoutMs = 180000;
 const retentionMs = 10 * 60 * 1000;
-const websocketUrl = "ws://127.0.0.1:8000/live-wave";
+const websocketUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL ?? "ws://127.0.0.1:8000/live-wave";
 const traceScale = 200000;
 const traceSpacing = 2;
 const traceHeight = 50;
