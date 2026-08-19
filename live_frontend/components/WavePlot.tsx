@@ -13,6 +13,7 @@ const traceScale = 200000;
 const traceSpacing = 2;
 const traceHeight = 50;
 const minimumPlotHeight = 180;
+const packetGapMs = 1000;
 
 const waveColors = [
     "#89b4fa",
@@ -182,27 +183,35 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
 
         function displayWave(key: string) {
             const x: number[] = [];
-            const y: number[] = [];
+            const y: Array<number | null> = [];
             const samples = waves[key];
             if (!samples) return { x: [], y: [] };
             const originalIndex = waveKeys.indexOf(key);
             const offset = (waveKeys.length - originalIndex - 1) * traceSpacing;
             const [displayLeftMs, displayRightMs] = userRangeMs ?? [windowLeftMs, windowRightMs];
             const constant = stationControlsRef.current[originalIndex]?.constant ?? 1;
+            let previousTime: number | null = null;
 
             for (let i = 0; i < samples.times.length; i += 1) {
                 const time = samples.times[i];
                 if (time < displayLeftMs || time > displayRightMs) continue;
+                const value = samples.values[i];
 
                 const traceClipHeight = traceSpacing * 0.5;
-                const scaledValue = samples.values[i] * constant * traceScale;
+                const scaledValue = value * constant * traceScale;
                 const clippedValue = Math.max(
                     -traceClipHeight,
                     Math.min(traceClipHeight, scaledValue)
                 );
 
+                if (previousTime !== null && time - previousTime > packetGapMs) {
+                    x.push(time);
+                    y.push(null);
+                }
+
                 x.push(time);
                 y.push(offset + clippedValue);
+                previousTime = time;
             }
 
             return { x, y };
@@ -262,10 +271,11 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
                 const externalHoveredStationId = hoveredStationIdRef.current;
                 const isHovered =
                     key === externalHoveredStationId || index === hoveredIndex;
+                const color = waveColors[Math.max(stationIndex, 0) % waveColors.length];
 
                 return {
                     type: "scattergl",
-                    mode: "lines",
+                    mode: "lines+markers",
                     name: key,
                     hoverinfo: "name",
                     x,
@@ -274,8 +284,12 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
                         ? isHovered ? 1 : 0.8
                         : 1,
                     line: {
-                        color: waveColors[Math.max(stationIndex, 0) % waveColors.length],
+                        color,
                         width: isHovered ? 2 : 1,
+                    },
+                    marker: {
+                        color,
+                        size: isHovered ? 3 : 2,
                     },
                 };
             });
@@ -301,7 +315,7 @@ export default function WavePlot({ stations, hoveredStationId, onHoverStation, w
                     type: "date" as const,
                     ...(userRangeMs !== null
                         ? { autorange: false, range: [userRangeMs[0], userRangeMs[1]] }
-                        : { autorange: true }),
+                        : { autorange: false, range: [windowLeftMs, windowRightMs] }),
                     gridcolor: gridColor,
                     tickfont: { color: plotFontColor },
                 },
